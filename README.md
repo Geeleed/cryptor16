@@ -1,14 +1,5 @@
 # cryptor16
 
-npm i @geeleed/cryptor16
-
-npm run test
-
-my algo for encrypt-decrypt the text with the key
-this just hobby!
-
-# cryptor16
-
 Encrypt and decrypt text using the `@geeleed/cryptor16` library.
 
 ## Installation
