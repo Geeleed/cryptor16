@@ -6,17 +6,23 @@ const hash256 = (data: string): string => {
   return hashedData;
 };
 
-const decToHex_8bit = (number: number): string => {
-  let hex: string = number.toString(16);
-  if (hex.length === 1) hex = "0" + hex;
-  return hex;
+const makeZero = (lengthOfZero: number) => {
+  let zero = "";
+  for (let i = 0; i < lengthOfZero; i++) zero += "0";
+  return zero;
 };
 
-const charToASCII_hex_8bit = (letter: string): string => {
-  return decToHex_8bit(letter.charCodeAt(0));
+const decToHex_32bit = (number: number): string => {
+  let hex: string = number.toString(16);
+  return makeZero(5 - hex.length) + hex;
 };
-const ASCIIhexToChar_8bit = (ASCII_hex: string): string => {
-  return String.fromCharCode(parseInt(ASCII_hex, 16));
+
+const charToUnicodeHex_32bit = (letter: string): string => {
+  return letter && decToHex_32bit(letter.codePointAt(0)!);
+};
+
+const unicodeHexToChar_32bit = (unicodeHex: string): string => {
+  return unicodeHex && String.fromCodePoint(parseInt(unicodeHex, 16));
 };
 
 const partition_64 = (text: string, lenCut: number = 64): string[] => {
@@ -30,6 +36,7 @@ const partition_64 = (text: string, lenCut: number = 64): string[] => {
         : text.slice(lenCut * i, lenText)
     );
   }
+  !result[result.length - 1] && result.pop();
   return result;
 };
 
@@ -43,6 +50,7 @@ const forwardBitwise_hex = (
   const result = hexSet[(inputHex_dec + numOfBitwise_dec) % 16];
   return result;
 };
+
 const backwardBitwise_hex = (
   inputHex: string,
   numOfBitwise_hex: string
@@ -55,47 +63,40 @@ const backwardBitwise_hex = (
   return result;
 };
 
-export const encryption = (text: string, key: string = "") => {
+export const encryption = (text: string, key: string = ""): string => {
   const initBlockHash: string = hash256(key);
   let textHex: string = text
     .split("")
-    .map((i) => charToASCII_hex_8bit(i))
+    .map((i) => charToUnicodeHex_32bit(i))
     .join("");
-  const partTextHex: string[] = partition_64(textHex);
+  const textHexLength = textHex.length;
+  const partTextHex: string[] = partition_64(textHex, 64);
   let partTextHash: string[] = partTextHex.map((item) => hash256(item));
-  let blockHash: string[] = [initBlockHash, ...partTextHash].slice(
-    0,
-    partTextHash.length
-  );
-  blockHash[blockHash.length - 1] = blockHash[blockHash.length - 1].slice(
-    0,
-    partTextHex[partTextHex.length - 1].length
-  );
-  let blockHex: string[] = partTextHex;
-  let encrypted: string = "";
-  for (let i = 0; i < blockHex.length; i++) {
-    encrypted += blockHex[i]
-      .split("")
-      .map((item, index) => forwardBitwise_hex(item, blockHash[i][index]))
-      .join("");
-  }
+  const combinedHash: string = [initBlockHash, ...partTextHash]
+    .join("")
+    .slice(0, textHexLength);
+  const encrypted = textHex
+    .split("")
+    .map((i, index) => forwardBitwise_hex(i, combinedHash[index]))
+    .join("");
   return encrypted;
 };
 
-export const decryption = (text: string, key: string = "") => {
+export const decryption = (text: string, key: string = ""): string => {
   let initHash: string = hash256(key);
-  const partHash: string[] = partition_64(text);
+  const partHash: string[] = partition_64(text, 64);
   let back: string = "";
   for (let i = 0; i < partHash.length; i++) {
-    initHash = partHash[i]
+    let temp: string = partHash[i]
       .split("")
       .map((item, index) => backwardBitwise_hex(item, initHash[index]))
       .join("");
-    back += initHash;
+    back += temp;
+    initHash = hash256(temp);
   }
-  const partBack: string[] = partition_64(back, 2);
+  const partBack: string[] = partition_64(back, 5);
   const decrypted: string = partBack
-    .map((item) => ASCIIhexToChar_8bit(item))
+    .map((item) => unicodeHexToChar_32bit(item))
     .join("");
   return decrypted;
 };

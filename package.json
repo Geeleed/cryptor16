@@ -1,7 +1,7 @@
 {
   "name": "@geeleed/cryptor16",
-  "version": "1.0.0",
-  "description": "encrypt/decrypt your text with your key not support Thai lang.",
+  "version": "2.0.0",
+  "description": "encrypt/decrypt your text with your key support all letter/emoji unicode 32 bit",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

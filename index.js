@@ -16,17 +16,21 @@ var hash256 = function (data) {
     var hashedData = hash.update(data, "utf-8").digest("hex");
     return hashedData;
 };
-var decToHex_8bit = function (number) {
+var makeZero = function (lengthOfZero) {
+    var zero = "";
+    for (var i = 0; i < lengthOfZero; i++)
+        zero += "0";
+    return zero;
+};
+var decToHex_32bit = function (number) {
     var hex = number.toString(16);
-    if (hex.length === 1)
-        hex = "0" + hex;
-    return hex;
+    return makeZero(5 - hex.length) + hex;
 };
-var charToASCII_hex_8bit = function (letter) {
-    return decToHex_8bit(letter.charCodeAt(0));
+var charToUnicodeHex_32bit = function (letter) {
+    return letter && decToHex_32bit(letter.codePointAt(0));
 };
-var ASCIIhexToChar_8bit = function (ASCII_hex) {
-    return String.fromCharCode(parseInt(ASCII_hex, 16));
+var unicodeHexToChar_32bit = function (unicodeHex) {
+    return unicodeHex && String.fromCodePoint(parseInt(unicodeHex, 16));
 };
 var partition_64 = function (text, lenCut) {
     if (lenCut === void 0) { lenCut = 64; }
@@ -38,6 +42,7 @@ var partition_64 = function (text, lenCut) {
             ? text.slice(lenCut * i, lenCut * (i + 1))
             : text.slice(lenCut * i, lenText));
     }
+    !result[result.length - 1] && result.pop();
     return result;
 };
 var forwardBitwise_hex = function (inputHex, numOfBitwise_hex) {
@@ -60,41 +65,36 @@ var encryption = function (text, key) {
     var initBlockHash = hash256(key);
     var textHex = text
         .split("")
-        .map(function (i) { return charToASCII_hex_8bit(i); })
+        .map(function (i) { return charToUnicodeHex_32bit(i); })
         .join("");
-    var partTextHex = partition_64(textHex);
+    var textHexLength = textHex.length;
+    var partTextHex = partition_64(textHex, 64);
     var partTextHash = partTextHex.map(function (item) { return hash256(item); });
-    var blockHash = __spreadArray([initBlockHash], partTextHash, true).slice(0, partTextHash.length);
-    blockHash[blockHash.length - 1] = blockHash[blockHash.length - 1].slice(0, partTextHex[partTextHex.length - 1].length);
-    var blockHex = partTextHex;
-    var encrypted = "";
-    var _loop_1 = function (i) {
-        encrypted += blockHex[i]
-            .split("")
-            .map(function (item, index) { return forwardBitwise_hex(item, blockHash[i][index]); })
-            .join("");
-    };
-    for (var i = 0; i < blockHex.length; i++) {
-        _loop_1(i);
-    }
+    var combinedHash = __spreadArray([initBlockHash], partTextHash, true).join("")
+        .slice(0, textHexLength);
+    var encrypted = textHex
+        .split("")
+        .map(function (i, index) { return forwardBitwise_hex(i, combinedHash[index]); })
+        .join("");
     return encrypted;
 };
 exports.encryption = encryption;
 var decryption = function (text, key) {
     if (key === void 0) { key = ""; }
     var initHash = hash256(key);
-    var partHash = partition_64(text);
+    var partHash = partition_64(text, 64);
     var back = "";
     for (var i = 0; i < partHash.length; i++) {
-        initHash = partHash[i]
+        var temp = partHash[i]
             .split("")
             .map(function (item, index) { return backwardBitwise_hex(item, initHash[index]); })
             .join("");
-        back += initHash;
+        back += temp;
+        initHash = hash256(temp);
     }
-    var partBack = partition_64(back, 2);
+    var partBack = partition_64(back, 5);
     var decrypted = partBack
-        .map(function (item) { return ASCIIhexToChar_8bit(item); })
+        .map(function (item) { return unicodeHexToChar_32bit(item); })
         .join("");
     return decrypted;
 };
