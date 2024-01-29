@@ -1,0 +1,17 @@
+{
+  "name": "@geeleed/cryptor16",
+  "version": "1.0.0",
+  "description": "encrypt/decrypt your text with your key not support Thai lang.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
