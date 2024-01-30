@@ -4,9 +4,10 @@ const { encryption, decryption } = require(".");
 console.log("Example 1");
 const text = "Hello world 😎";
 const key = "😆";
-const encrypted = encryption(text, key);
+const numOfBitInBase16 = 6;
+const encrypted = encryption(text, key, numOfBitInBase16);
 console.log("encrypted", encrypted);
-const decrypted = decryption(encrypted, key);
+const decrypted = decryption(encrypted, key, numOfBitInBase16);
 console.log("decrypted", decrypted);
 
 // example 2: object
@@ -14,9 +15,9 @@ console.log("Example 2");
 const objText = { name: "Geeleed", emo: "🥰" };
 const objectString = JSON.stringify(objText);
 const keyString = "ball";
-const objectEncrypted = encryption(objectString, keyString);
-console.log("objectEncrypted", objectEncrypted);
-const objectDecrypted = decryption(objectEncrypted, keyString);
-console.log("objectDncrypted", objectDecrypted);
-const objectData = JSON.parse(objectDecrypted);
+const objEncrypted = encryption(objectString, keyString, numOfBitInBase16);
+console.log("objEncrypted", objEncrypted);
+const objDecrypted = decryption(objEncrypted, keyString, numOfBitInBase16);
+console.log("objDecrypted", objDecrypted);
+const objectData = JSON.parse(objDecrypted);
 console.log("objectData", objectData);

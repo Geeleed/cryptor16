@@ -1,6 +1,6 @@
 {
   "name": "@geeleed/cryptor16",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "encrypt/decrypt your text with your key support all letter/emoji unicode 32 bit",
   "main": "index.js",
   "scripts": {

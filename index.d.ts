@@ -12,13 +12,20 @@ const makeZero = (lengthOfZero: number) => {
   return zero;
 };
 
-const decToHex_32bit = (number: number): string => {
+// numOfBitInBase16 max = 6.
+const decToHex_32bit = (
+  number: number,
+  numOfBitInBase16: number = 6
+): string => {
   let hex: string = number.toString(16);
-  return makeZero(5 - hex.length) + hex;
+  return makeZero(numOfBitInBase16 - hex.length) + hex;
 };
 
-const charToUnicodeHex_32bit = (letter: string): string => {
-  return letter && decToHex_32bit(letter.codePointAt(0)!);
+const charToUnicodeHex_32bit = (
+  letter: string,
+  numOfBitInBase16: number = 6
+): string => {
+  return letter && decToHex_32bit(letter.codePointAt(0)!, numOfBitInBase16);
 };
 
 const unicodeHexToChar_32bit = (unicodeHex: string): string => {
@@ -63,11 +70,15 @@ const backwardBitwise_hex = (
   return result;
 };
 
-export const encryption = (text: string, key: string = ""): string => {
+export const encryption = (
+  text: string,
+  key: string = "",
+  numOfBitInBase16: number = 6
+): string => {
   const initBlockHash: string = hash256(key);
   let textHex: string = text
     .split("")
-    .map((i) => charToUnicodeHex_32bit(i))
+    .map((i) => charToUnicodeHex_32bit(i, numOfBitInBase16))
     .join("");
   const textHexLength = textHex.length;
   const partTextHex: string[] = partition_64(textHex, 64);
@@ -82,7 +93,11 @@ export const encryption = (text: string, key: string = ""): string => {
   return encrypted;
 };
 
-export const decryption = (text: string, key: string = ""): string => {
+export const decryption = (
+  text: string,
+  key: string = "",
+  numOfBitInBase16: number = 6
+): string => {
   let initHash: string = hash256(key);
   const partHash: string[] = partition_64(text, 64);
   let back: string = "";
@@ -94,7 +109,7 @@ export const decryption = (text: string, key: string = ""): string => {
     back += temp;
     initHash = hash256(temp);
   }
-  const partBack: string[] = partition_64(back, 5);
+  const partBack: string[] = partition_64(back, numOfBitInBase16);
   const decrypted: string = partBack
     .map((item) => unicodeHexToChar_32bit(item))
     .join("");
