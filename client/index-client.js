@@ -1,0 +1,134 @@
+"use strict";
+
+// นำเข้าตัวเข้ารหัส
+var CryptoJS = window.CryptoJS;
+
+function hash256(data) {
+  return CryptoJS.SHA256(data).toString(CryptoJS.enc.Hex);
+}
+
+var makeZero = function (lengthOfZero) {
+  var zero = "";
+  for (var i = 0; i < lengthOfZero; i++) zero += "0";
+  return zero;
+};
+
+// numOfBitInBase16 max = 6.
+var decToHex_32bit = function (number, numOfBitInBase16) {
+  if (numOfBitInBase16 === void 0) {
+    numOfBitInBase16 = 6;
+  }
+  var hex = number.toString(16);
+  return makeZero(numOfBitInBase16 - hex.length) + hex;
+};
+
+var charToUnicodeHex_32bit = function (letter, numOfBitInBase16) {
+  if (numOfBitInBase16 === void 0) {
+    numOfBitInBase16 = 6;
+  }
+  return letter && decToHex_32bit(letter.codePointAt(0), numOfBitInBase16);
+};
+
+var unicodeHexToChar_32bit = function (unicodeHex) {
+  return unicodeHex && String.fromCodePoint(parseInt(unicodeHex, 16));
+};
+
+var partition_64 = function (text, lenCut) {
+  if (lenCut === void 0) {
+    lenCut = 64;
+  }
+  var lenText = text.length;
+  var numBlocks = Math.floor(lenText / lenCut) + 1;
+  var result = [];
+  for (var i = 0; i < numBlocks; i++) {
+    result.push(
+      i !== numBlocks - 1
+        ? text.slice(lenCut * i, lenCut * (i + 1))
+        : text.slice(lenCut * i, lenText)
+    );
+  }
+  !result[result.length - 1] && result.pop();
+  return result;
+};
+
+var forwardBitwise_hex = function (inputHex, numOfBitwise_hex) {
+  var hexSet = "0123456789abcdef";
+  var inputHex_dec = parseInt(inputHex, 16);
+  var numOfBitwise_dec = parseInt(numOfBitwise_hex, 16);
+  var result = hexSet[(inputHex_dec + numOfBitwise_dec) % 16];
+  return result;
+};
+
+var backwardBitwise_hex = function (inputHex, numOfBitwise_hex) {
+  var hexSet = "0123456789abcdef";
+  var inputHex_dec = parseInt(inputHex, 16);
+  var numOfBitwise_dec = parseInt(numOfBitwise_hex, 16);
+  var target = (inputHex_dec - numOfBitwise_dec) % 16;
+  var result = target < 0 ? hexSet[16 + target] : hexSet[target];
+  return result;
+};
+
+function encryption(text, key, numOfBitInBase16) {
+  if (key === void 0) {
+    key = "";
+  }
+  if (numOfBitInBase16 === void 0) {
+    numOfBitInBase16 = 6;
+  }
+  var initBlockHash = hash256(key);
+  var textHex = text
+    .split("")
+    .map(function (i) {
+      return charToUnicodeHex_32bit(i, numOfBitInBase16);
+    })
+    .join("");
+  var textHexLength = textHex.length;
+  var partTextHex = partition_64(textHex, 64);
+  var partTextHash = partTextHex.map(function (item) {
+    return hash256(item);
+  });
+  var combinedHash = [initBlockHash]
+    .concat(partTextHash)
+    .join("")
+    .slice(0, textHexLength);
+  var encrypted = textHex
+    .split("")
+    .map(function (i, index) {
+      return forwardBitwise_hex(i, combinedHash[index]);
+    })
+    .join("");
+  return encrypted;
+}
+
+function decryption(text, key, numOfBitInBase16) {
+  if (key === void 0) {
+    key = "";
+  }
+  if (numOfBitInBase16 === void 0) {
+    numOfBitInBase16 = 6;
+  }
+  var initHash = hash256(key);
+  var partHash = partition_64(text, 64);
+  var back = "";
+  for (var i = 0; i < partHash.length; i++) {
+    var temp = partHash[i]
+      .split("")
+      .map(function (item, index) {
+        return backwardBitwise_hex(item, initHash[index]);
+      })
+      .join("");
+    back += temp;
+    initHash = hash256(temp);
+  }
+  var partBack = partition_64(back, numOfBitInBase16);
+  var decrypted = partBack
+    .map(function (item) {
+      return unicodeHexToChar_32bit(item);
+    })
+    .join("");
+  return decrypted;
+}
+
+// ทำให้ฟังก์ชัน encryption และ decryption ใช้งานได้ในเบราว์เซอร์
+window.encryption = encryption;
+window.decryption = decryption;
