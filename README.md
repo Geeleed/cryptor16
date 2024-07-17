@@ -28,10 +28,10 @@ const cryptor16 = require('@geeleed/cryptor16');
 const key = 'your-secret-key';
 const text = 'Hello, World!';
 
-const encryptedText = cryptor16.encrypt(text, key);
+const encryptedText = cryptor16.encryption(text, key);
 console.log('Encrypted:', encryptedText);
 
-const decryptedText = cryptor16.decrypt(encryptedText, key);
+const decryptedText = cryptor16.decryption(encryptedText, key);
 console.log('Decrypted:', decryptedText);
 ```
 
